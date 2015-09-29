@@ -1,10 +1,10 @@
 #issuuPagePub.py
 '''main crawler class
-@version0.2.150912
+@version0.3.150928
 @author:maajor{<mailto:hello_myd@126.com>} 
 '''
 
-import urllib, re, errno, os
+import urllib, urllib2, re, errno, os
 
 class issuuPagePub:
     def __init__(self, Url):
@@ -15,8 +15,11 @@ class issuuPagePub:
         self._likes = self.__setPageLikes()
         self._city = self.__setPageCity()
         self._country = self.__setPageCountry()
+        self._publishDate = self.__setPagePublishDate()
+        self._width = self.__setPageWidth()
+        self._height = self.__setPageHeight()
         self._documentId = ''
-        self._pageCount = -1
+        self._pageCount = self.__setPageCount()
         self._publicationId = ''
         self._revisionId = ''
         self._ownerUsername = ''
@@ -28,7 +31,7 @@ class issuuPagePub:
         self._relatedUrls = []
     def __initBasicInformation(self):
         self._documentId = self.__setPageDocumentId()
-        self._pageCount = self.__setPageCount()
+        #self._pageCount = self.__setPageCount()
     def __initAdvInformation(self):
         self._publicationId = self.__setPagePublicationId()
         self._revisionId = self.__setPageRevisionId()
@@ -42,12 +45,10 @@ class issuuPagePub:
         self._relatedUrls = self.__setRelatedUrl()
     def __parsePage(self):
         try:
-            content = urllib.urlopen(self._url).read()
+            content = urllib2.urlopen(self._url, timeout = 1000).read()
             return content
         except:
-            raise
-            return 
-    
+            return ''
     def __setPageLikes(self):
         try:
             likes = re.findall(r'\"likes":[0-9]*',self._content)
@@ -76,7 +77,28 @@ class issuuPagePub:
             country = re.split('["]', country[0])[3]
             return country
         except:
-            return ''      
+            return ''    
+    def __setPagePublishDate(self):
+        try:
+            publishDate = re.findall(r'\"publishDate":\"[^"]*\"',self._content)
+            publishDate = re.split('["]', publishDate[0])[3]
+            return publishDate
+        except:
+            return '' 
+    def __setPageWidth(self):
+        try:
+            width = re.findall(r'\"coverWidth":[0-9]*',self._content)
+            width = re.split('[:]', width[0])[1]
+            return width
+        except:
+            return ''
+    def __setPageHeight(self):
+        try:
+            height = re.findall(r'\"coverHeight":[0-9]*',self._content)
+            height = re.split('[:]', height[0])[1]
+            return height
+        except:
+            return ''  
     def __setPageDocumentId(self):
         try:
             documentid = re.findall(r'documentId=.*\"', self._content)
@@ -130,38 +152,51 @@ class issuuPagePub:
         except:
             return ''
     def __setPageDescription(self):
-        description = re.findall(r'\"description":\"[^"]*\"',self._content)
-        if description != []:
-            description = re.split('["]', description[0])[3]
-            return description
-        else:
+        try:
+            description = re.findall(r'\"description":\"[^"]*\"',self._content)
+            if description != []:
+                description = re.split('["]', description[0])[3]
+                return description
+            else:
+                return 'None'
+        except:
             return 'None'
     def getInformation(self):
-        return [self._title, str(self._likes), self._description, self._city, self._country]
+        return [self._title, str(self._likes), self._description, self._city, self._country, self._publishDate, self._pageCount, self._width, self._height]
     def __str__(self):
-        return self._title + " HAS LIKES : " + str(self._likes) + " published at " + self._city + ", " + self._country
+        return self._title + " HAS LIKES : " + str(self._likes) + " published at " + self._city + ", " + self._country + " at " + self._publishDate
     def __parseRelatedPubs(self):
         relatedRequestUrl = 'http://issuu.com/call/stream/api/related/3/2/initial?publicationId=' + self._publicationId + '&revisionId=' + self._revisionId + '&ownerUsername=' + self._ownerUsername + '&seed=1000&pageSize=50&format=json'
         try:
-            relatedRequestContent = urllib.urlopen(relatedRequestUrl).read()
+            relatedRequestContent = urllib2.urlopen(relatedRequestUrl, timeout = 1000).read()
         except IOError:
             return []  
         return relatedRequestContent            
     def __setRelatedOwnerUsernames(self):
-        relatedOwnerUsername =  re.findall(r'\"ownerUsername": \"[a-zA-Z0-9\.\-\_]*\"',self._relatedContent)
-        for index in xrange(len(relatedOwnerUsername)):
-            thisName = re.split('["]', relatedOwnerUsername[index])[3]
-            relatedOwnerUsername[index] = thisName 
-        return relatedOwnerUsername
+        try:
+            relatedOwnerUsername =  re.findall(r'\"ownerUsername": \"[a-zA-Z0-9\.\-\_]*\"',self._relatedContent)
+            for index in xrange(len(relatedOwnerUsername)):
+                thisName = re.split('["]', relatedOwnerUsername[index])[3]
+                relatedOwnerUsername[index] = thisName 
+            return relatedOwnerUsername
+        except TypeError:
+            return []
     def __setRelatedPublicationNames(self):
-        relatedPublicationName =  re.findall(r'\"publicationName": \"[a-zA-Z0-9\.\-\_]*\"',self._relatedContent)
-        for index in xrange(len(relatedPublicationName)):
-            thisName = re.split('["]', relatedPublicationName[index])[3]
-            relatedPublicationName[index] = thisName 
-        return relatedPublicationName
+        try:
+            relatedPublicationName =  re.findall(r'\"publicationName": \"[a-zA-Z0-9\.\-\_]*\"',self._relatedContent)
+            for index in xrange(len(relatedPublicationName)):
+                thisName = re.split('["]', relatedPublicationName[index])[3]
+                relatedPublicationName[index] = thisName 
+            return relatedPublicationName
+        except TypeError:
+            return []
     def __setRelatedDescriptions(self):
-        relatedDescriptions = re.findall(r'\"description": \"[^"]*\"',self._relatedContent)
-        return relatedDescriptions
+        try:
+            relatedDescriptions = re.findall(r'\"description": \"[^"]*\"',self._relatedContent)
+            return relatedDescriptions
+        except TypeError:
+            print self._relatedContent
+            return []
     def __setRelatedUrl(self):
         if self._relatedContent == []:
             return []
