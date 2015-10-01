@@ -1,6 +1,6 @@
 #LoadAndContinueCrawl.py
 '''load saved queue and restart crawl
-@version0.3.150928
+@version0.4.151001
 @author:maajor{<mailto:hello_myd@126.com>} 
 '''
 
@@ -17,13 +17,14 @@ qm.loadDict(dictQueue, 'dictQueue.csv')
 
 count = 0
 
-while count < 2000 and myqueue.qsize() > 0:
+while count < 4000:
     if myqueue.qsize() == 0:
         break
     thisurl = myqueue.get()
-    thisPage = issuuPagePub.issuuPagePub(thisurl)
     if dictPubSaved.has_key(thisurl) or dictPub.has_key(thisurl):
+        print thisurl + " passed"
         continue
+    thisPage = issuuPagePub.issuuPagePub(thisurl)
     dictPub[thisurl] = thisPage.getInformation()
     count += 1
     print str(count) + " : " + str(thisPage) 
@@ -42,7 +43,7 @@ with open('C:\Users\walter\Desktop\stat.csv', 'wb') as csvfile:
         title, like, descrip, city, country, date, count, width, height = info
         spamwriter.writerow([url, title, like, descrip, city, country, date, count, width, height])
         dictPubSaved[url] = 0
-        
 
+qm.saveQueue(myqueue)
 qm.saveDict(dictPubSaved, 'dictPub.csv')
 qm.saveDict(dictQueue, 'dictQueue.csv')

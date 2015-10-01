@@ -1,6 +1,6 @@
 #crawlForMostLikedPortf.py
 '''an application to crawl for most liked publication and save them, using issuuPagePub class
-@version0.3.150928
+@version0.4.151001
 @author:maajor{<mailto:hello_myd@126.com>} 
 '''
 
